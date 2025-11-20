@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Konfiguracja Euros OS",
+        "description": "Podaj klucz pompy ciepła znajdujący się na jednostce wewnętrznej pod kodem QR lub w aplikacji; Ustawienia -> Przyjazna nazwa użytkownika, zaczyna się 010101 lub 010301 oraz adres IP pompy.",
+        "data": {
+            "key": "Klucz",
+            "ip": "Adres IP"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie udało się połączyć z urządzeniem przez MQTT.",
+      "unknown": "Wystąpił nieoczekiwany błąd.",
+      "invalid_ip": "Nieprawidłowy format adresu IP.",
+      "already_configured": "Urządzenie z tym kluczem jest już dodane."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje Euros OS"
+      }
+    }
+  }
+}

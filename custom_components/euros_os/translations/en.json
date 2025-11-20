@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Euros OS Configuration",
+        "description": "Enter the heat pump key found on the internal unit under the QR code or in the app; Settings -> Friendly user name, starts with 010101 or 010301, and the heat pump IP address.",
+        "data": {
+          "key": "Key",
+          "ip": "IP Address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the device via MQTT.",
+      "unknown": "An unexpected error occurred.",
+      "invalid_ip": "Invalid IP address format.",
+      "already_configured": "A device with this key has already been added."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Euros OS Options"
+      }
+    }
+  }
+}
