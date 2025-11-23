@@ -6,7 +6,7 @@ Euros OS Home Assistant Custom Integration
 File        : const.py
 Author      : Patryk "KoPcIu" Kopeć / https://github.com/McKoPcIu/EurosOS
 Integration : euros_os
-Version     : 0.1.0
+Version     : 0.1.1
 Description : Custom integration for EurosEnergy and E-On devices.
 
 ===============================================================================
@@ -40,6 +40,7 @@ SENSORS_VARIABLES = { # Name, Unit, Icon, Device class
     "TSM16": ("Temp. wejściowa czynnika", "°C", "mdi:thermometer", "temperature"),
     "SX4_PH": ("Próg załączenia ogrzewania", "°C", "mdi:thermometer", "temperature"),
     "TOUT_KOR": ("Temp. zewnętrzna - średnia", "°C", "mdi:thermometer-minus", "temperature"),
+    "SPCU": ("Setpoint krzywej grzewczej", "°C", "mdi:thermometer-auto", "temperature"),
     
     # Hetpump data
     "STATE": ("Stan pracy", None, "mdi:sync", None),
@@ -63,12 +64,26 @@ SENSORS_VARIABLES = { # Name, Unit, Icon, Device class
 
 NUMBERS_VARIABLES = { # Name, Unit, Icon, Min, Max, Step, Mode(0 - )
     "CUN_HCU": ("Numer krzywej grzewczej", None, "mdi:chart-line", 0, 9, 1, "AUTO"),
-    "CUN_D_HCU": ("Podbicie krzywej grzewczej", "°C", "mdi:thermometer", 0, 10, 1, "AUTO")
-#    "SX5": ("Temp. zadana CWU", "°C", "mdi:thermometer", 30, 55, 1, "BOX"),
-#    "SX6": ("Temp. zadana CO", "°C", "mdi:thermometer", 10, 30, 1, "BOX"),
+    "CUN_D_HCU": ("Podbicie krzywej grzewczej", "°C", "mdi:thermometer", 0, 10, 1, "AUTO"),
+    "SPDHW_ZAD": ("Temp. zadana CWU", "°C", "mdi:thermometer", 30, 55, 1, "BOX"),
+    "SPHT_ZAD": ("Temp. zadana CO", "°C", "mdi:thermometer", 10, 30, 1, "BOX"),
+    "SPDHW_HIST": ("Histereza regulacji CWU", "°C", "mdi:thermometer", 1, 12, 1, "AUTO")
 }
 
 
 SELECTS_VARIABLES = { # Name, Unit, Icon, Options
     "MODE": ("Tryb pracy", None, "mdi:autorenew", ["AUTO", "ECO", "TIME", "AWAY", "OFF"])
+}
+
+SWITCH_VARIABLES = { # Name, Icon, 
+    "SWEXT_T_CWU": ("CWU Turbo", "mdi:fire"),
+
+    "SXF_ENACYR": ("Zezwolenie na załączenie pompy cyrkulacyjnej", "mdi:water-check"),
+    "SXF_FORCYR": ("Wymuszenie pracy pompy cyrkulacyjnej", "mdi:pump")
+}
+
+BINARY_SENSOR_VARIABLES = { # Name, Icon, Device class
+    "ZM_DEFR_SIGN": ("Sygnał odszraniania", "mdi:snowflake-melt", None),
+    "SIO_R11": ("Sygnał grzałki ST1", "mdi:heat-wave", None),
+    "SIO_R01": ("Sygnał grzałki ST2", "mdi:heat-wave", None)
 }

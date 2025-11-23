@@ -6,7 +6,7 @@ Euros OS Home Assistant Custom Integration
 File        : number.py
 Author      : Patryk "KoPcIu" Kopeć / https://github.com/McKoPcIu/EurosOS
 Integration : euros_os
-Version     : 0.1.0
+Version     : 0.1.1
 Description : Custom integration for EurosEnergy and E-On devices.
 
 ===============================================================================
@@ -17,6 +17,7 @@ from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.core import callback
 from .const import DOMAIN, CONF_KEY, NUMBERS_VARIABLES
 from .coordinator import EurosOSMQTTCoordinator
+from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger("custom_components.euros_os")
 
@@ -59,10 +60,11 @@ class EurosOSNumber(NumberEntity):
         coordinator.async_add_listener(self._handle_coordinator_update)
 
     async def async_set_native_value(self, value):
-#        mode = self._get_device_mode()
-#        if self.key in ("SX5", "SX6") and mode != "AUTO":
-#            _LOGGER.warning("Cannot update %s: device mode is not AUTO (current: %s)", self.key, mode)
-#            return
+        mode = self._get_device_mode()
+        if self.key in ("SPDHW_ZAD", "SPHT_ZAD") and mode != "AUTO":
+            raise HomeAssistantError(
+                "Nie można ustawić temperatury: warunki urządzenia nie są spełnione."
+            )
 
         entry_data = getattr(self.coordinator, "entry_data", {})
 
@@ -90,7 +92,6 @@ class EurosOSNumber(NumberEntity):
     async def async_will_remove_from_hass(self):
         self.coordinator.async_remove_listener(self._handle_coordinator_update)
 
-"""
     def _get_device_mode(self):
         device_data = getattr(self.coordinator.device, "get", lambda x, d=None: d)("Data", {})
         try:
@@ -113,4 +114,3 @@ class EurosOSNumber(NumberEntity):
                 return "UNKNOWN"
         except Exception:
             return "UNKNOWN"
-"""

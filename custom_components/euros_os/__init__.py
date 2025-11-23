@@ -6,7 +6,7 @@ Euros OS Home Assistant Custom Integration
 File        : __init__.py
 Author      : Patryk "KoPcIu" Kopeć / https://github.com/McKoPcIu/EurosOS
 Integration : euros_os
-Version     : 0.1.0
+Version     : 0.1.1
 Description : Custom integration for EurosEnergy and E-On devices.
 
 ===============================================================================
@@ -16,7 +16,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN, CONF_KEY, CONF_IP
 from .coordinator import EurosOSMQTTCoordinator
 
-PLATFORMS = ["sensor", "number", "select"]
+PLATFORMS = ["sensor", "number", "select", "switch", "binary_sensor"]
 
 async def async_setup(hass: HomeAssistant, config: dict):
     return True
