@@ -6,7 +6,7 @@ Euros OS Home Assistant Custom Integration
 File        : const.py
 Author      : Patryk "KoPcIu" Kopeć / https://github.com/McKoPcIu/EurosOS
 Integration : euros_os
-Version     : 0.1.1
+Version     : 0.1.1-hotfix
 Description : Custom integration for EurosEnergy and E-On devices.
 
 ===============================================================================
@@ -36,7 +36,7 @@ SENSORS_VARIABLES = { # Name, Unit, Icon, Device class
     "TSM17": ("Temp. zbiornika buforowego", "°C", "mdi:thermometer", "temperature"),
     "TSM10": ("Temp. wewnętrzna", "°C", "mdi:home-thermometer", "temperature"),
     "TSM9": ("Temp. zewnętrzna", "°C", "mdi:home-thermometer-outline", "temperature"),
-    "ZM_COIL_TEMP": ("Temp. wyjściowa czynnika", "°C", "mdi:thermometer", "temperature"),
+    "ZM_SUCT_TEMP": ("Temp. wyjściowa czynnika", "°C", "mdi:thermometer", "temperature"),
     "TSM16": ("Temp. wejściowa czynnika", "°C", "mdi:thermometer", "temperature"),
     "SX4_PH": ("Próg załączenia ogrzewania", "°C", "mdi:thermometer", "temperature"),
     "TOUT_KOR": ("Temp. zewnętrzna - średnia", "°C", "mdi:thermometer-minus", "temperature"),
