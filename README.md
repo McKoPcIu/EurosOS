@@ -1,3 +1,7 @@
+<a href="https://buycoffee.to/kopciu" target="_blank" rel="noopener noreferrer">
+  <img src="https://kopciu.info/coffee.png" alt="BuyCoffee.to – Postaw kawę">
+</a>
+
 # Euros OS Home Assistant Integration
 
 Integracja **Euros OS** umożliwia monitorowanie i kontrolowanie systemów grzewczych EurosEnergy oraz E-On poprzez **MQTT** w Home Assistant.  
