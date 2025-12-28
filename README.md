@@ -95,7 +95,7 @@ Przykładowe encje:
 ## Wsparcie
 
 - Grupa E-On na FB: [Pompy Ciepła E.ON Air Euros Atmo DIY](https://www.facebook.com/groups/1068907574414311?locale=pl_PL)
-- Repozytorium GitHub: [Repozytorium](https://github.com/McKoPcIu/Euros_OS)
+- Repozytorium GitHub: [Repozytorium](https://github.com/McKoPcIu/EurosOS)
 - Błędy i sugestie można zgłaszać bezpośrednio w GitHub.
 
 ---
