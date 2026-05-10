@@ -68,6 +68,24 @@ class EurosOSSwitch(SwitchEntity):
                     "Nie można włączyć CWU Turbo: warunki urządzenia nie są spełnione."
                 )
 
+        elif self.key == "SBF_HTS":
+            SBF_HTX = int(device_data.get("SBF_HTX", 0))
+            SBF_OOF = int(device_data.get("SBF_OOF", 0))
+
+            if not (SBF_HTX == 1 and SBF_OOF == 1):
+                raise HomeAssistantError(
+                    "Nie można włączyć ogrzewania: warunki urządzenia nie są spełnione."
+                )
+
+        elif self.key == "SBF_DHS":
+            SBF_DHX = int(device_data.get("SBF_DHX", 0))
+            SBF_OOF = int(device_data.get("SBF_OOF", 0))
+
+            if not (SBF_DHX == 1 and SBF_OOF == 1):
+                raise HomeAssistantError(
+                    "Nie można włączyć CWU: warunki urządzenia nie są spełnione."
+                )
+
         payload = {self.key: 1}
         success = await self.coordinator.async_set_device_value(payload, entry_data)
         if success:

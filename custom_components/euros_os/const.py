@@ -86,7 +86,9 @@ SWITCH_VARIABLES = { # Name, Icon,
     "SWEXT_T_CWU": ("CWU Turbo", "mdi:fire"),
 
     "SXF_ENACYR": ("Zezwolenie na załączenie pompy cyrkulacyjnej", "mdi:water-check"),
-    "SXF_FORCYR": ("Wymuszenie pracy pompy cyrkulacyjnej", "mdi:pump")
+    "SXF_FORCYR": ("Wymuszenie pracy pompy cyrkulacyjnej", "mdi:pump"),
+    "SBF_HTS": ("Ogrzewanie", "mdi:radiator"),
+    "SBF_DHS": ("CWU", "mdi:water-boiler")
 }
 
 BINARY_SENSOR_VARIABLES = { # Name, Icon, Device class
