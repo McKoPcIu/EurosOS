@@ -41,7 +41,7 @@ class EurosOSNumber(NumberEntity):
         self.coordinator = coordinator
         self.key = key
         self._attr_name = info[0]
-        self._unit = info[1] #self._attr_unit_of_measurement = info[1]
+        self._attr_native_unit_of_measurement = info[1]
         self._attr_icon = info[2]
         self._attr_native_min_value = info[3]
         self._attr_native_max_value = info[4]
@@ -74,10 +74,6 @@ class EurosOSNumber(NumberEntity):
             _LOGGER.debug("Value for %s updated to %s", self.key, value)
         else:
             _LOGGER.error("Failed to update %s", self.key)
-
-    @property
-    def unit_of_measurement(self):
-        return self._unit
 
     @callback
     def _handle_coordinator_update(self):
