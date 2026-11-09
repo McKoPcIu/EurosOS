@@ -17,6 +17,18 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import callback
 from .const import DOMAIN, CONF_KEY, BINARY_SENSOR_VARIABLES
 from .coordinator import EurosOSMQTTCoordinator
+from .geo import GEO_DEVICE_TYPE, entity_supported_for_device
+
+# GEO-only read-only output indicators; correlations verified in CO/CWU tests.
+# These report controller signals, not independently measured pump operation.
+GEO_BINARY_SENSOR_VARIABLES = {
+    "SIO_R02": ("Pompa CO – stan pracy", "mdi:pump"),
+    "SIO_R08": ("Pompa górnego źródła – stan pracy", "mdi:pump"),
+    "SIO_R07": ("Pompa dolnego źródła – stan pracy", "mdi:pump"),
+    "SIO_R03": ("Pompa cyrkulacyjna CWU – stan pracy", "mdi:pump"),
+    "SIO_R06": ("Sprężarka – stan pracy", "mdi:engine"),
+    "SXF_ENACYR": ("Pompa cyrkulacyjna CWU – stan zezwolenia", "mdi:water-check"),
+}
 
 _LOGGER = logging.getLogger("custom_components.euros_os")
 
@@ -29,8 +41,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
     unique_prefix = entry_data.get(CONF_KEY, "---")
     coordinator.entry_data = entry_data
 
+    device_type = entry_data.get("device_type")
     for key, info in BINARY_SENSOR_VARIABLES.items():
+        if not entity_supported_for_device(key, device_type):
+            continue
         entities.append(EurosOSBinarySensor(coordinator, key, info, unique_prefix, device_info))
+
+    if device_type == GEO_DEVICE_TYPE:
+        for key, info in GEO_BINARY_SENSOR_VARIABLES.items():
+            entities.append(EurosOSBinarySensor(coordinator, key, info, unique_prefix, device_info))
 
     async_add_entities(entities)
     _LOGGER.info("Added %d binary_sensor entities.", len(entities))
@@ -55,7 +74,12 @@ class EurosOSBinarySensor(BinarySensorEntity):
         if self.key in ["SIO_R11", "SIO_R01"] and device_data.get("SWEXT_ZBCRO", 0) == 0:
             return
 
-        self._attr_is_on = int(device_data.get(self.key, 0)) == 1
+        raw = device_data.get(self.key)
+        # Missing or malformed readings must remain unknown, never false OFF.
+        if raw is None or isinstance(raw, bool) or str(raw).strip() not in ("0", "1"):
+            self._attr_is_on = None
+        else:
+            self._attr_is_on = str(raw).strip() == "1"
         if self.hass:
             self.hass.loop.call_soon_threadsafe(self.async_write_ha_state)
 

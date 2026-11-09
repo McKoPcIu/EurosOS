@@ -17,6 +17,7 @@ from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.core import callback
 from .const import DOMAIN, CONF_KEY, NUMBERS_VARIABLES
 from .coordinator import EurosOSMQTTCoordinator
+from .geo import entity_supported_for_device
 from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger("custom_components.euros_os")
@@ -30,7 +31,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     unique_prefix = entry_data.get(CONF_KEY, "---")
     coordinator.entry_data = entry_data
 
+    device_type = entry_data.get("device_type")
     for key, info in NUMBERS_VARIABLES.items():
+        if not entity_supported_for_device(key, device_type):
+            continue
         entities.append(EurosOSNumber(coordinator, key, info, unique_prefix, device_info))
 
     async_add_entities(entities)

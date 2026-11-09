@@ -18,6 +18,8 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.core import callback
 from .const import DOMAIN, CONF_KEY, SELECTS_VARIABLES
 from .coordinator import EurosOSMQTTCoordinator
+from .geo import GEO_DEVICE_TYPE
+from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger("custom_components.euros_os")
 
@@ -32,8 +34,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     unique_prefix = entry_data.get(CONF_KEY, "---")
     coordinator.entry_data = entry_data
 
+    device_type = entry_data.get("device_type")
     for key, info in SELECTS_VARIABLES.items():
-        entities.append(EurosOSModeSelect(coordinator, key, info, unique_prefix, device_info))
+        entities.append(EurosOSModeSelect(coordinator, key, info, unique_prefix, device_info, device_type))
 
     async_add_entities(entities)
     _LOGGER.info("Added %d select entities.", len(entities))
@@ -41,13 +44,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 class EurosOSModeSelect(SelectEntity):
 
-    def __init__(self, coordinator, key, info, unique_prefix, device_info):
+    def __init__(self, coordinator, key, info, unique_prefix, device_info, device_type=None):
         self.coordinator = coordinator
+        self.device_type = device_type
         self.key = key
         self._attr_name = info[0]
         self._unit = info[1]
         self._attr_icon = info[2]
-        self._attr_options = info[3]
+        # Only GEO exposes EMS in the observed Euros Smart modes.
+        self._attr_options = (
+            ["AUTO", "EMS", "TIME", "AWAY", "OFF"]
+            if device_type == GEO_DEVICE_TYPE and key == "MODE"
+            else info[3]
+        )
         self._attr_unique_id = f"{unique_prefix}_{key.lower()}"
         self._attr_device_info = device_info
 
@@ -65,6 +74,27 @@ class EurosOSModeSelect(SelectEntity):
         return self._analyze_mode(data)
 
     async def async_select_option(self, option: str):
+        if option not in self._attr_options:
+            raise HomeAssistantError(f"Nieobsługiwany tryb: {option}")
+
+        # GEO: U_ENE_TAR=0/1 is verified as a *status* indicator only.
+        # We have NOT verified how to write AUTO/EMS on the /App topic.
+        # Do not issue a partial legacy AUTO command while EMS is active:
+        # it would leave U_ENE_TAR=1 and falsely imply AUTO succeeded.
+        if self.device_type == GEO_DEVICE_TYPE and self.key == "MODE":
+            if option == "EMS":
+                raise HomeAssistantError(
+                    "Sterowanie EMS z Home Assistant jest jeszcze niezweryfikowane. "
+                    "Użyj Euros Smart do zmiany trybu."
+                )
+            if option == "AUTO":
+                device_data = self.coordinator.device.get("Data", {}) if self.coordinator.device else {}
+                if str(device_data.get("U_ENE_TAR", "")).strip() != "0":
+                    raise HomeAssistantError(
+                        "Nie można bezpiecznie przełączyć z EMS na AUTO: "
+                        "brak potwierdzonego polecenia MQTT. Użyj Euros Smart."
+                    )
+
         entry_data = getattr(self.coordinator, "entry_data", {})
         payload = None
 
@@ -136,6 +166,41 @@ class EurosOSModeSelect(SelectEntity):
             self.hass.loop.call_soon_threadsafe(self.async_write_ha_state)
 
     def _analyze_mode(self, data):
+        if self.device_type == GEO_DEVICE_TYPE:
+            # Mirrors the validated GEO mode readout while preventing a
+            # missing or invalid tariff flag from being reported as AUTO.
+            try:
+                def bit(key):
+                    value = data.get(key)
+                    if isinstance(value, bool) or str(value).strip() not in ("0", "1"):
+                        return None
+                    return int(value)
+
+                off = bit("SBF_OOF")
+                eco = bit("SXF_ECO")
+                away = bit("SXF_AWA")
+                timed = bit("SXF_TIME")
+                if None in (off, eco, away, timed):
+                    return None
+                if off == 0:
+                    return "OFF"
+                if timed == 1:
+                    return "TIME"
+                if away == 1:
+                    return "AWAY"
+                if eco == 1:
+                    # ECO is not exposed in the tested GEO Euros Smart UI.
+                    return None
+                tariff = bit("U_ENE_TAR")
+                if tariff == 1:
+                    return "EMS"
+                if tariff == 0:
+                    return "AUTO"
+                return None
+            except (TypeError, ValueError, AttributeError) as exc:
+                _LOGGER.warning("Cannot analyze GEO operating mode: %s", exc)
+                return None
+
         try:
             SBF_OOF = int(data.get("SBF_OOF", 0))
             SXF_ECO = int(data.get("SXF_ECO", 0))
