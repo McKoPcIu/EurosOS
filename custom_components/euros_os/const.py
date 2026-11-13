@@ -45,10 +45,10 @@ SENSORS_VARIABLES = { # Name, Unit, Icon, Device class
     # Hetpump data
     "STATE": ("Stan pracy", None, "mdi:sync", None),
     "MODE": ("Tryb pracy", None, "mdi:autorenew", None),
-    "ZM_FAN1_SPE": ("Prędkość wentylatora #1", "RPM", "mdi:fan", "speed"),
-    "ZM_FAN2_SPE": ("Prędkość wentylatora #2", "RPM", "mdi:fan", "speed"),
+    "ZM_FAN1_SPE": ("Prędkość wentylatora #1", "RPM", "mdi:fan", None),
+    "ZM_FAN2_SPE": ("Prędkość wentylatora #2", "RPM", "mdi:fan", None),
     "ZM_CUR_COMP_FREQ": ("Częstotliwość sprężarki", "Hz", "mdi:engine", "frequency"),
-    "PWM_1": ("Pompa obiegu grzewczego", "%", "mdi:pump", "power"),
+    "PWM_1": ("Pompa obiegu grzewczego", "%", "mdi:pump", None),
     
     # Status
     "SW_VERSION": ("Wersja oprogramowania", None, "mdi:chip", None),

@@ -24,6 +24,7 @@ import voluptuous as vol
 import paho.mqtt.client as mqtt
 
 from homeassistant import config_entries
+from .discovery import find_pump
 from .const import DOMAIN, CONF_KEY, DEFAULT_KEY, CONF_IP, DEFAULT_IP, MQTT_USER, MQTT_PASSWORD, MQTT_PORT
 
 _LOGGER = logging.getLogger("custom_components.euros_os")
@@ -54,7 +55,7 @@ class EurosOSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
 
             try:
-                _LOGGER.debug("Checking MQTT topic availability: %s on %s", topic, ip)
+                _LOGGER.debug("Checking Euros OS MQTT availability")
                 device_data = await self.hass.async_add_executor_job(
                     self._verify_mqtt_topic, ip, topic
                 )
@@ -62,7 +63,7 @@ class EurosOSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "cannot_connect"
                 return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
             except Exception as e:
-                _LOGGER.exception("Error during MQTT validation: %s", e)
+                _LOGGER.warning("MQTT discovery validation failed (%s)", type(e).__name__)
                 errors["base"] = "unknown"
                 return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
 
@@ -85,7 +86,7 @@ class EurosOSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         def on_connect(client, userdata, flags, rc):
             if rc == 0:
-                _LOGGER.debug("Connected to MQTT broker at %s:%s", ip, MQTT_PORT)
+                _LOGGER.debug("Connected to Euros OS MQTT broker for discovery")
                 client.subscribe(topic)
             else:
                 _LOGGER.error("Failed to connect to MQTT broker, rc=%s", rc)
@@ -94,12 +95,14 @@ class EurosOSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         def on_message(client, userdata, msg):
             try:
                 payload = json.loads(msg.payload)
-                if "Devices" in payload:
-                    payload_container["data"] = payload
-                    event.set()
-                    client.disconnect()
+                if isinstance(payload, dict):
+                    pump = find_pump(payload.get("Devices"))
+                    if pump is not None:
+                        payload_container["data"] = payload
+                        event.set()
+                        client.disconnect()
             except Exception:
-                _LOGGER.warning("Received invalid JSON on %s", topic)
+                _LOGGER.warning("Ignoring malformed MQTT discovery message")
 
         client = mqtt.Client()
         client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
@@ -110,7 +113,7 @@ class EurosOSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             client.connect(ip, MQTT_PORT, 60)
         except Exception as e:
-            _LOGGER.error("Cannot connect to MQTT broker: %s", e)
+            _LOGGER.warning("MQTT discovery connection failed (%s)", type(e).__name__)
             raise CannotConnect
 
         client.loop_start()
@@ -122,8 +125,10 @@ class EurosOSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if not payload_container:
             raise CannotConnect("No response from the device via MQTT.")
 
-        _LOGGER.debug("Received valid MQTT message: %s", payload_container["data"])
-        device_info = payload_container["data"].get("Devices", [{}])[0]
+        _LOGGER.debug("MQTT discovery received a supported pump")
+        device_info = find_pump(payload_container["data"].get("Devices"))
+        if device_info is None:
+            raise CannotConnect("No unique supported heat pump in MQTT Devices.")
         device_model = device_info.get("Name", "---")
         device_type = device_info.get("Type", "---")
         device_version = device_info.get("Version", "---")

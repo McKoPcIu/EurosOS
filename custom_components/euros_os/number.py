@@ -17,6 +17,7 @@ from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.core import callback
 from .const import DOMAIN, CONF_KEY, NUMBERS_VARIABLES
 from .coordinator import EurosOSMQTTCoordinator
+from .geo import GEO_DEVICE_TYPE, entity_supported_for_device
 from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger("custom_components.euros_os")
@@ -30,7 +31,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     unique_prefix = entry_data.get(CONF_KEY, "---")
     coordinator.entry_data = entry_data
 
+    device_type = entry_data.get("device_type")
     for key, info in NUMBERS_VARIABLES.items():
+        if not entity_supported_for_device(key, device_type):
+            continue
         entities.append(EurosOSNumber(coordinator, key, info, unique_prefix, device_info))
 
     async_add_entities(entities)
@@ -41,7 +45,7 @@ class EurosOSNumber(NumberEntity):
         self.coordinator = coordinator
         self.key = key
         self._attr_name = info[0]
-        self._unit = info[1] #self._attr_unit_of_measurement = info[1]
+        self._attr_native_unit_of_measurement = info[1]
         self._attr_icon = info[2]
         self._attr_native_min_value = info[3]
         self._attr_native_max_value = info[4]
@@ -59,9 +63,13 @@ class EurosOSNumber(NumberEntity):
 
         coordinator.async_add_listener(self._handle_coordinator_update)
 
+    @property
+    def available(self):
+        return self.coordinator.pump_is_fresh()
+
     async def async_set_native_value(self, value):
         mode = self._get_device_mode()
-        if self.key in ("SPDHW_ZAD", "SPHT_ZAD") and mode != "AUTO":
+        if self.key in ("SPDHW_ZAD", "SPHT_ZAD") and mode not in ("AUTO", "EMS"):
             raise HomeAssistantError(
                 "Nie można ustawić temperatury: warunki urządzenia nie są spełnione."
             )
@@ -74,10 +82,6 @@ class EurosOSNumber(NumberEntity):
             _LOGGER.debug("Value for %s updated to %s", self.key, value)
         else:
             _LOGGER.error("Failed to update %s", self.key)
-
-    @property
-    def unit_of_measurement(self):
-        return self._unit
 
     @callback
     def _handle_coordinator_update(self):
@@ -101,6 +105,17 @@ class EurosOSNumber(NumberEntity):
             SXF_TIME = int(device_data.get("SXF_TIME", 0))
 
             if SBF_OOF == 1 and SXF_ECO == 0 and SXF_AWA == 0 and SXF_TIME == 0:
+                if getattr(self.coordinator, "pump_type", None) == GEO_DEVICE_TYPE:
+                    # GEO in EMS previously looked like AUTO to NumberEntity.
+                    # Keep verified temperature adjustments allowed in EMS,
+                    # but reject missing/invalid mode flags instead of guessing.
+                    tariff = device_data.get("U_ENE_TAR")
+                    if isinstance(tariff, bool):
+                        return "UNKNOWN"
+                    if str(tariff).strip() == "1":
+                        return "EMS"
+                    if str(tariff).strip() != "0":
+                        return "UNKNOWN"
                 return "AUTO"
             elif SBF_OOF == 1 and SXF_ECO == 1 and SXF_AWA == 0:
                 return "ECO"

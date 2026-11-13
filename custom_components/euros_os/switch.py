@@ -49,6 +49,10 @@ class EurosOSSwitch(SwitchEntity):
         coordinator.async_add_listener(self._handle_coordinator_update)
 
     @property
+    def available(self):
+        return self.coordinator.pump_is_fresh()
+
+    @property
     def is_on(self):
         return self._is_on
 
@@ -57,11 +61,16 @@ class EurosOSSwitch(SwitchEntity):
         device_data = getattr(self.coordinator.device, "get", lambda x, d=None: d)("Data", {})
 
         if self.key == "SWEXT_T_CWU":
-            SBF_DHS = int(device_data.get("SBF_DHS", 0))
-            SBF_DHX = int(device_data.get("SBF_DHX", 0))
-            SBF_OOF = int(device_data.get("SBF_OOF", 0))
-            SXF_ANL = int(device_data.get("SXF_ANL", 0))
-            SBF_PHT = int(device_data.get("SBF_PHT", 0))
+            try:
+                SBF_DHS = int(device_data.get("SBF_DHS", 0))
+                SBF_DHX = int(device_data.get("SBF_DHX", 0))
+                SBF_OOF = int(device_data.get("SBF_OOF", 0))
+                SXF_ANL = int(device_data.get("SXF_ANL", 0))
+                SBF_PHT = int(device_data.get("SBF_PHT", 0))
+            except (TypeError, ValueError) as exc:
+                raise HomeAssistantError(
+                    "Nie można włączyć CWU Turbo: nieprawidłowe dane sterownika."
+                ) from exc
 
             if not (SBF_DHS == 1 and SBF_DHX == 1 and SBF_OOF == 1) or (SXF_ANL == 1 and SBF_PHT == 1):
                 raise HomeAssistantError(
@@ -93,7 +102,11 @@ class EurosOSSwitch(SwitchEntity):
     def _handle_coordinator_update(self):
         device_data = getattr(self.coordinator.device, "get", lambda x, d=None: d)("Data", {})
 
-        self._is_on = int(device_data.get(self.key, 0)) == 1
+        raw = device_data.get(self.key)
+        if isinstance(raw, bool) or str(raw).strip() not in ("0", "1"):
+            self._is_on = None
+        else:
+            self._is_on = str(raw).strip() == "1"
         if self.hass:
             self.hass.loop.call_soon_threadsafe(self.async_write_ha_state)
 
